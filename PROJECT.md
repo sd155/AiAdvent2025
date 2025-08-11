@@ -14,14 +14,12 @@
 │   │   ├── src/                     
 │   │   │   ├── commonMain/    # Shared code across platforms
 │   │   │   ├── androidMain/   # Android-specific code
-│   │   │   ├── desktopMain/   # Desktop-specific code (JVM) (In progress)
-│   │   │   ├── wasmJsMain/   # Web-specific code (WASM/JS) (In progress)
-│   │   │   └── iosMain/       # iOS-specific code (In progress)
+│   │   │   └── desktopMain/   # Desktop-specific code (JVM) (In progress)
 │   │   └── build.gradle.kts   # KMP app module build configuration
-│   │
-│   └── ios/                   # iOS app module (In progress)
 │
 ├── features/                     # KMP project features
+│   ├── chat/                     # KMP chat module
+│   └── utils/                    # KMP utilities module
 │
 ├── gradle/                       # Gradle wrapper
 │   └── wrapper/
