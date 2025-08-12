@@ -122,12 +122,12 @@ private fun LocalBubble(content: String) =
     }
 
 @Composable
-private fun RemoteBubble(content: String) =
+private fun RemoteBubble(content: ResponseContent) =
     Row(
         modifier = Modifier
             .fillMaxWidth(),
     ) {
-        Box(
+        Column (
             modifier = Modifier
                 .background(
                     color = Color.Cyan,
@@ -136,10 +136,35 @@ private fun RemoteBubble(content: String) =
                 .padding(16.dp)
                 .weight(2f),
         ) {
-            Text(text = content)
+            Text(text = "Status: ${content.result}")
+            Spacer(modifier = Modifier.height(16.dp))
+            content.subtasks.forEach { subtask ->
+                SubtaskItem(subtask = subtask, depth = 0)
+            }
         }
         Spacer(modifier = Modifier.weight(1f))
     }
+
+@Composable
+private fun SubtaskItem(subtask: Subtask, depth: Int) {
+    val indent = (depth * 8).dp
+    Row {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = "* ${subtask.name}",
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                text = subtask.instruction,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(start = indent + 16.dp, bottom = 8.dp)
+            )
+        subtask.subtasks.forEach { child ->
+            SubtaskItem(subtask = child, depth = depth + 1)
+        }
+        }
+    }
+}
 
 @Composable
 private fun RemoteLoading() =

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema ",
+  "type": "object",
+  "oneOf": [
+    {
+      "properties": {
+        "result": {
+          "const": "success"
+        },
+        "subtasks": {
+          "$ref": "#/$defs/subtaskTree"
+        }
+      },
+      "required": ["result", "subtasks"]
+    },
+    {
+      "properties": {
+        "result": {
+          "const": "error"
+        },
+        "error_reason": {
+          "type": "string"
+        }
+      },
+      "required": ["result", "error_reason"]
+    }
+  ],
+  "$defs": {
+    "subtaskTree": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "instruction": { "type": "string" },
+          "subtasks": { "$ref": "#/$defs/subtaskTree" }
+        },
+        "required": ["id", "name", "instruction"],
+        "additionalProperties": false
+      }
+    }
+  }
+}

@@ -1,5 +1,6 @@
 package io.github.sd155.aiadvent2025.chat
 
+import aiadvent2025.features.chat.generated.resources.Res
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.sd155.aiadvent2025.utils.Result
@@ -20,6 +21,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,7 +32,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 internal class ChatViewModel : ViewModel() {
-    private val _ai by lazy { Ai() }
+    private val _ai = Ai(viewModelScope)
     private val _state = MutableStateFlow(ChatViewState())
     internal val state: StateFlow<ChatViewState> = _state.asStateFlow()
 
@@ -63,7 +65,11 @@ internal class ChatViewModel : ViewModel() {
 }
 
 
-private class Ai {
+private class Ai(scope: CoroutineScope) {
+    private val _json = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+    }
     private val _context by lazy { mutableListOf<MessageDto>() }
     private val _httpClient by lazy {
         HttpClient(CIO) {
@@ -81,7 +87,7 @@ private class Ai {
 
             install(HttpTimeout) {
                 connectTimeoutMillis = 15000
-                requestTimeoutMillis = 30000
+                requestTimeoutMillis = 60000
             }
 
             val baseUrl = "https://openrouter.ai/api/v1/chat/completions"
@@ -94,7 +100,21 @@ private class Ai {
         }
     }
 
-    suspend fun request(prompt: String): Result<AiError, String> {
+    init {
+        scope.launch(Dispatchers.Default) {
+            _context.add(
+                MessageDto(
+                    role = "user",
+                    content = "You are a task decomposer. You should take user prompt as task description, which you have to decompose to small and easy subtasks." +
+                            "Your response has to strictly follow the rules:" +
+                            "1. Valid JSON only, do not wrap it with markers, do not add extra content." +
+                            "2. Use the given JSON scheme, do not extend the scheme. The scheme: ${String(Res.readBytes("files/scheme.json"))}"
+                )
+            )
+        }
+    }
+
+    suspend fun request(prompt: String): Result<AiError, ResponseContent> {
         val userMessage = MessageDto(
             role = "user",
             content = prompt,
@@ -102,6 +122,8 @@ private class Ai {
         _context.add(userMessage)
         val payload = RequestDto(
             model = "qwen/qwen3-235b-a22b:free",
+            responseFormat = FormatDto(type = "json_object"),
+            provider = ProviderDto(only = listOf("Chutes")),
             messages = _context,
         )
         return try {
@@ -117,7 +139,10 @@ private class Ai {
                 }
                 .next { aiMessage ->
                     _context.add(aiMessage)
-                    aiMessage.content?.asSuccess() ?: AiError.asFailure()
+                    aiMessage.content?.let {
+                        _json.decodeFromString<ResponseContent>(it).asSuccess()
+                    }
+                        ?: AiError.asFailure()
                 }
         }
         catch (e: Exception) {
@@ -134,6 +159,22 @@ private data class RequestDto(
     val model: String,
     @SerialName("messages")
     val messages: List<MessageDto>,
+    @SerialName("response_format")
+    val responseFormat: FormatDto,
+    @SerialName("provider")
+    val provider: ProviderDto,
+)
+
+@Serializable
+private data class ProviderDto(
+    @SerialName("only")
+    val only: List<String>,
+)
+
+@Serializable
+private data class FormatDto(
+    @SerialName("type")
+    val type: String,
 )
 
 @Serializable
@@ -154,4 +195,24 @@ private data class ResponseDto(
 private data class ChoiceDto(
     @SerialName("message")
     val message: MessageDto?,
+)
+
+@Serializable
+data class ResponseContent(
+    @SerialName("result")
+    val result: String,
+    @SerialName("subtasks")
+    val subtasks: List<Subtask>
+)
+
+@Serializable
+data class Subtask(
+    @SerialName("id")
+    val id: String,
+    @SerialName("name")
+    val name: String,
+    @SerialName("instruction")
+    val instruction: String,
+    @SerialName("subtasks")
+    val subtasks: List<Subtask> = emptyList()
 )
