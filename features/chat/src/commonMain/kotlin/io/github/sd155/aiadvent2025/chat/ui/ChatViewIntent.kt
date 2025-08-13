@@ -1,4 +1,4 @@
-package io.github.sd155.aiadvent2025.chat
+package io.github.sd155.aiadvent2025.chat.ui
 
 internal sealed class ChatViewIntent {
     data class UserPrompted(

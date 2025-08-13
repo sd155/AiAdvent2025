@@ -1,4 +1,4 @@
-package io.github.sd155.aiadvent2025.chat
+package io.github.sd155.aiadvent2025.chat.ui
 
 import aiadvent2025.features.chat.generated.resources.Res
 import aiadvent2025.features.chat.generated.resources.ai_failed
@@ -37,6 +37,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import io.github.sd155.aiadvent2025.chat.domain.decomposer.DecomposerResponse
+import io.github.sd155.aiadvent2025.chat.domain.decomposer.DecomposerSubtask
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
@@ -122,7 +124,7 @@ private fun LocalBubble(content: String) =
     }
 
 @Composable
-private fun RemoteBubble(content: Response) =
+private fun RemoteBubble(content: DecomposerResponse) =
     Row(
         modifier = Modifier
             .fillMaxWidth(),
@@ -137,12 +139,12 @@ private fun RemoteBubble(content: Response) =
                 .weight(2f),
         ) {
             when (content) {
-                is Response.Query -> {
+                is DecomposerResponse.Query -> {
                     Text(text = "Status: ${content.result}")
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(text = content.question)
                 }
-                is Response.Success -> {
+                is DecomposerResponse.Success -> {
                     Text(text = "Status: ${content.result}")
                     Spacer(modifier = Modifier.height(16.dp))
                     content.subtasks.forEach { subtask ->
@@ -155,7 +157,7 @@ private fun RemoteBubble(content: Response) =
     }
 
 @Composable
-private fun SubtaskItem(subtask: Subtask, depth: Int) {
+private fun SubtaskItem(subtask: DecomposerSubtask, depth: Int) {
     val indent = (depth * 8).dp
     Row {
         Column(modifier = Modifier.fillMaxWidth()) {

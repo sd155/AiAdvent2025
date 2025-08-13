@@ -1,4 +1,4 @@
-package io.github.sd155.aiadvent2025.chat
+package io.github.sd155.aiadvent2025.chat.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
