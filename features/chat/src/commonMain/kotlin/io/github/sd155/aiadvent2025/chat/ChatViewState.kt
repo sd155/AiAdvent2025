@@ -6,7 +6,7 @@ internal data class ChatViewState(
 
 internal sealed class ChatMessage {
     data class UserMessage(val content: String) : ChatMessage()
-    data class AiMessage(val content: ResponseContent) : ChatMessage()
+    data class AiMessage(val content: Response) : ChatMessage()
     data object AiTyping : ChatMessage()
     data object AiError : ChatMessage()
 }

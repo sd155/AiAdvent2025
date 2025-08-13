@@ -122,7 +122,7 @@ private fun LocalBubble(content: String) =
     }
 
 @Composable
-private fun RemoteBubble(content: ResponseContent) =
+private fun RemoteBubble(content: Response) =
     Row(
         modifier = Modifier
             .fillMaxWidth(),
@@ -133,13 +133,22 @@ private fun RemoteBubble(content: ResponseContent) =
                     color = Color.Cyan,
                     shape = RoundedCornerShape(size = 16.dp)
                 )
-                .padding(16.dp)
+                .padding(8.dp)
                 .weight(2f),
         ) {
-            Text(text = "Status: ${content.result}")
-            Spacer(modifier = Modifier.height(16.dp))
-            content.subtasks.forEach { subtask ->
-                SubtaskItem(subtask = subtask, depth = 0)
+            when (content) {
+                is Response.Query -> {
+                    Text(text = "Status: ${content.result}")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(text = content.question)
+                }
+                is Response.Success -> {
+                    Text(text = "Status: ${content.result}")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    content.subtasks.forEach { subtask ->
+                        SubtaskItem(subtask = subtask, depth = 0)
+                    }
+                }
             }
         }
         Spacer(modifier = Modifier.weight(1f))
@@ -151,17 +160,18 @@ private fun SubtaskItem(subtask: Subtask, depth: Int) {
     Row {
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "* ${subtask.name}",
+                text = "${subtask.id} ${subtask.name}",
                 style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(start = indent)
             )
             Text(
                 text = subtask.instruction,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(start = indent + 16.dp, bottom = 8.dp)
             )
-        subtask.subtasks.forEach { child ->
-            SubtaskItem(subtask = child, depth = depth + 1)
-        }
+            subtask.subtasks.forEach { child ->
+                SubtaskItem(subtask = child, depth = depth + 1)
+            }
         }
     }
 }

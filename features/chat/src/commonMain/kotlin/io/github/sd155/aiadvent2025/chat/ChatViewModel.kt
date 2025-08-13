@@ -69,6 +69,7 @@ private class Ai(scope: CoroutineScope) {
     private val _json = Json {
         ignoreUnknownKeys = true
         isLenient = true
+        classDiscriminator = "result"
     }
     private val _context by lazy { mutableListOf<MessageDto>() }
     private val _httpClient by lazy {
@@ -104,17 +105,19 @@ private class Ai(scope: CoroutineScope) {
         scope.launch(Dispatchers.Default) {
             _context.add(
                 MessageDto(
-                    role = "user",
+                    role = "system",
                     content = "You are a task decomposer. You should take user prompt as task description, which you have to decompose to small and easy subtasks." +
                             "Your response has to strictly follow the rules:" +
                             "1. Valid JSON only, do not wrap it with markers, do not add extra content." +
-                            "2. Use the given JSON scheme, do not extend the scheme. The scheme: ${String(Res.readBytes("files/scheme.json"))}"
+                            "2. Use 'query' type when you need to ask user for details. Property 'question' should contain your question only." +
+                            "3. Use 'success' type when the task decomposition is ready, you have all the subtasks, you have no questions to resolve the decomposition." +
+                            "4. Use the given JSON scheme, do not extend the scheme. The scheme: ${String(Res.readBytes("files/scheme.json"))}"
                 )
             )
         }
     }
 
-    suspend fun request(prompt: String): Result<AiError, ResponseContent> {
+    suspend fun request(prompt: String): Result<AiError, Response> {
         val userMessage = MessageDto(
             role = "user",
             content = prompt,
@@ -140,7 +143,7 @@ private class Ai(scope: CoroutineScope) {
                 .next { aiMessage ->
                     _context.add(aiMessage)
                     aiMessage.content?.let {
-                        _json.decodeFromString<ResponseContent>(it).asSuccess()
+                        _json.decodeFromString<Response>(it).asSuccess()
                     }
                         ?: AiError.asFailure()
                 }
@@ -198,15 +201,27 @@ private data class ChoiceDto(
 )
 
 @Serializable
-data class ResponseContent(
-    @SerialName("result")
-    val result: String,
-    @SerialName("subtasks")
-    val subtasks: List<Subtask>
-)
+internal sealed class Response {
+    @Serializable
+    @SerialName("success")
+    data class Success(
+        @SerialName("result")
+        val result: String,
+        @SerialName("subtasks")
+        val subtasks: List<Subtask>,
+    ) : Response()
+    @Serializable
+    @SerialName("query")
+    data class Query(
+        @SerialName("result")
+        val result: String,
+        @SerialName("question")
+        val question: String,
+    ) : Response()
+}
 
 @Serializable
-data class Subtask(
+internal data class Subtask(
     @SerialName("id")
     val id: String,
     @SerialName("name")

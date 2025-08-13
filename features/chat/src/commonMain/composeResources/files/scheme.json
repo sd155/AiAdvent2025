@@ -16,13 +16,13 @@
     {
       "properties": {
         "result": {
-          "const": "error"
+          "const": "query"
         },
-        "error_reason": {
+        "question": {
           "type": "string"
         }
       },
-      "required": ["result", "error_reason"]
+      "required": ["result", "question"]
     }
   ],
   "$defs": {
