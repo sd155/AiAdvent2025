@@ -82,10 +82,22 @@ private fun MessageList(
     ) {
         itemsIndexed(messages) { index, message ->
             when (message) {
-                is ChatMessage.AiMessage -> RemoteBubble(message.content)
+                is ChatMessage.AiResult -> RemoteBubble(
+                    status = "result",
+                    msg = message.description,
+                    decomposition = message.decomposition
+                )
                 ChatMessage.AiTyping -> RemoteLoading()
                 is ChatMessage.UserMessage -> LocalBubble(message.content)
                 ChatMessage.AiError -> RemoteError()
+                is ChatMessage.AiQuery -> RemoteBubble(
+                    status = "query",
+                    msg = message.question
+                )
+                ChatMessage.AiSwitch -> RemoteBubble(
+                    status = "agent switch",
+                    msg = "Decomposer agent done, switching to Q agent.."
+                )
             }
             if (index < messages.size - 1)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -124,7 +136,11 @@ private fun LocalBubble(content: String) =
     }
 
 @Composable
-private fun RemoteBubble(content: DecomposerResponse) =
+private fun RemoteBubble(
+    status: String,
+    msg: String,
+    decomposition: List<DecomposerSubtask>? = null,
+) =
     Row(
         modifier = Modifier
             .fillMaxWidth(),
@@ -138,18 +154,12 @@ private fun RemoteBubble(content: DecomposerResponse) =
                 .padding(8.dp)
                 .weight(2f),
         ) {
-            when (content) {
-                is DecomposerResponse.Query -> {
-                    Text(text = "Status: ${content.result}")
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(text = content.question)
-                }
-                is DecomposerResponse.Success -> {
-                    Text(text = "Status: ${content.result}")
-                    Spacer(modifier = Modifier.height(16.dp))
-                    content.subtasks.forEach { subtask ->
-                        SubtaskItem(subtask = subtask, depth = 0)
-                    }
+            Text(text = "Status: $status")
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(text = msg)
+            decomposition?.let {
+                decomposition.forEach { subtask ->
+                    SubtaskItem(subtask = subtask, depth = 0)
                 }
             }
         }

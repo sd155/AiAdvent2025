@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema ",
+  "type": "object",
+  "oneOf": [
+    {
+      "properties": {
+        "result": {
+          "const": "valid"
+        }
+      },
+      "required": ["result"]
+    },
+    {
+      "properties": {
+        "result": {
+          "const": "invalid"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": ["result", "reason"]
+    }
+  ]
+}
